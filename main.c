@@ -1,14 +1,17 @@
 /*
-	program to check if braces matches or not
-*/
+ * program to check if delimiters {([])} match or not
+ */
 
-#include<stdio.h>
-#include<stdbool.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
-#define MAXSIZE 100
+#define MAXSIZE 4096
 
-char stack[MAXSIZE];
+// char stack[MAXSIZE];
+static
+char * stack = NULL;
+static
 int top = 0;
 
 void empty(void);
@@ -18,75 +21,135 @@ bool is_full(void);
 bool is_empty(void);
 void stack_overflow(void);
 void stack_underflow(void);
+void clean_death(int RC);
 
-int main() {
-    char ch;
+char const * const msg_success = "Delimiters match.";
+char const * const msg_failure = "Delimiters don't match.";
 
-    while((ch = getchar()) != '\n' ) {
+//  MARK: main()
+int main(int argc, char const * argv[]) {
+  int RC = EXIT_SUCCESS;
+  char ch;
 
-        switch(ch) {
-            case '}':
-                if (pop() == '{') {
-                    break;
-                } else {
-                    printf("Parentheses and/or braces doesnt matches."); return 0;
-                }
-            case ')':
-                if (pop() == '(') {
-                    break;
-                } else {
-                    printf("Parentheses and/or braces doesnt matches."); return 0;
-                }
-            default: push(ch);
-        }
+  stack = malloc(MAXSIZE);
+  if (stack == NULL) {
+    puts("Unable to allocate memory for stack.");
+    clean_death(EXIT_FAILURE);
+  }
+
+  while ((ch = getchar()) != EOF ) {
+    //  embed delimiters inside comments so this
+    //  source can be used to test the program
+    switch(ch) {
+    case /* { */ '}':
+      if (pop() != '{' /* } */) {
+        puts(msg_failure);
+        puts("GRONK! B");
+        clean_death(EXIT_FAILURE);
+      }
+      break;
+
+    case /* ( */ ')':
+      if (pop() != '(' /* ) */) {
+        puts(msg_failure);
+        puts("GRONK! P");
+        clean_death(EXIT_FAILURE);
+      }
+      break;
+
+    case /* [ */ ']':
+      if (pop() != '[' /* ] */) {
+        puts(msg_failure);
+        puts("GRONK! S");
+        clean_death(EXIT_FAILURE);
+      }
+      break;
+
+    case '{': /* } */
+    case '(': /* ) */
+    case '[': /* ] */
+      push(ch);
+      break;
+
+    default:
+      break;
     }
+  }
 
-    if (top == 0) {
-        printf("Parentheses and/or braces matches.");
-    } else {
-        printf("Parentheses and/or braces doesnt matches.");
-    }
+  if (top == 0) {
+    puts(msg_success);
+    RC = EXIT_SUCCESS;
+  }
+  else {
+    puts(msg_failure);
+    RC = EXIT_FAILURE;
+  }
 
-    return 0;
+  if (stack != NULL) {
+    free(stack);
+    stack = NULL;
+  }
+
+  return RC;
 }
+
+//  MARK: empty()
 void empty(void) {
-    top = 0;
+  top = 0;
 }
 
+//  MARK: push()
 void push(char ch) {
-    if (is_full()) {
-        stack_overflow();
-    } else {
-        stack[top++] = ch;
-    }
+  if (is_full()) {
+    stack_overflow();
+  }
+  else {
+    stack[top++] = ch;
+  }
 }
 
+//  MARK: pop()
 char pop(void) {
-    if(is_empty()) {
-        stack_underflow();
-    } else {
-        return stack[--top];
-    }
+  if(is_empty()) {
+    stack_underflow();
+    return '\0';
+  }
+  else {
+    return stack[--top];
+  }
 }
 
+//  MARK: is_empty()
 bool is_empty(void) {
-    return top == 0;
+  return top == 0;
 }
 
+//  MARK:  is_full()
 bool is_full(void) {
-    return top == MAXSIZE;
+  return top == MAXSIZE;
 }
 
+//  MARK: stack_overflow()
 void stack_overflow(void) {
-    if (top == MAXSIZE) {
-        printf("Stack overflow");
-		exit(EXIT_SUCCESS);
+  if (top == MAXSIZE) {
+    puts("Stack overflow");
+    clean_death(EXIT_FAILURE);
 	}
 }
 
+//  MARK: stack_underflow()
 void stack_underflow(void) {
-    if (top == 0) {
-        printf("Stack underflow");
-		exit(EXIT_SUCCESS);
+  if (top == 0) {
+    puts("Stack underflow");
+    clean_death(EXIT_FAILURE);
 	}
+}
+
+//  MARK: clean_death()
+void clean_death(int RC) {
+  if (stack != NULL) {
+    free(stack);
+    stack = NULL;
+  }
+  exit(RC);
 }
