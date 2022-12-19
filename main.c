@@ -1,5 +1,10 @@
 /*
- * program to check if delimiters {([])} match or not
+ * program to check if delimiters {}, (), [] match.
+ *
+ * Usage:
+ *  Pipe or redirect a file to the program
+ *    pipe [|]:      $ cat input_file | ./main
+ *    redirect [<]:  $ ./main < input_file
  */
 
 #include <stdio.h>
@@ -8,7 +13,6 @@
 
 #define MAXSIZE 4096
 
-// char stack[MAXSIZE];
 static
 char * stack = NULL;
 static
@@ -23,7 +27,9 @@ void stack_overflow(void);
 void stack_underflow(void);
 void clean_death(int RC);
 
+static
 char const * const msg_success = "Delimiters match.";
+static
 char const * const msg_failure = "Delimiters don't match.";
 
 //  MARK: main()
@@ -40,6 +46,8 @@ int main(int argc, char const * argv[]) {
   while ((ch = getchar()) != EOF ) {
     //  embed delimiters inside comments so this
     //  source can be used to test the program
+    //  e.g: $ cat main.c | ./main
+    //  or:  $ ./main < main.c
     switch(ch) {
     case /* { */ '}':
       if (pop() != '{' /* } */) {
